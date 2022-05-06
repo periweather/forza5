@@ -2,7 +2,7 @@ package forza5
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -109,6 +109,10 @@ type FH5Telemetry struct {
 	NormalizedAIBrakeDifference          int8    `json:"normalizedAIBrakeDifference"`
 }
 
+func (telemetry *FH5Telemetry) ReadBuffer(b []byte, len int) {
+	telemetry.IsRaceOn = binary.BigEndian.Uint16(b[0:2])
+}
+
 func Server(ctx context.Context, address string) (err error) {
 
 	conn, err := net.ListenPacket("udp", address)
@@ -131,13 +135,16 @@ func Server(ctx context.Context, address string) (err error) {
 			}
 
 			fmt.Printf("Packet received (Server) %d: bytes=%d from=%s buffer=%x\n", count, n, addr.String(), buffer[:n])
+
 			var telemetry FH5Telemetry
-			err = json.Unmarshal(buffer[:n], &telemetry)
-			if err != nil {
-				fmt.Println(err)
-				doneChan <- err
-				return
-			}
+			telemetry.ReadBuffer(buffer, n)
+			fmt.Printf("Telem is race on: %d\n", telemetry.IsRaceOn)
+			//err = json.Unmarshal(buffer[:n], &telemetry)
+			//if err != nil {
+			//	fmt.Println(err)
+			//	doneChan <- err
+			//	return
+			//}
 
 			//fmt.Printf("Buffer (Server): ", buffer)
 
