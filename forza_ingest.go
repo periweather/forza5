@@ -110,7 +110,7 @@ type FH5Telemetry struct {
 }
 
 func (telemetry *FH5Telemetry) ReadBuffer(b []byte, len int) {
-	telemetry.IsRaceOn = binary.BigEndian.Uint16(b[0:2])
+	telemetry.IsRaceOn = binary.LittleEndian.Uint16(b[0:2])
 }
 
 func Server(ctx context.Context, address string) (err error) {
