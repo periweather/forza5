@@ -1,6 +1,7 @@
 package forza5
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -11,9 +12,13 @@ import (
 
 const maxBufferSize = 1024
 
+type FH5Telemetry interface {
+	printDetails()
+}
+
 // packet 324 bytes?
 type FH5Telemetry struct {
-	IsRaceOn                             uint16  `json:"isRaceOn"` // 0 or 1
+	IsRaceOn                             int32   `json:"isRaceOn"` // 0 or 1
 	TimeStampMS                          uint32  `json:"timeStampMS"`
 	EngineMaxRPM                         float32 `json:"engineMaxRPM"`
 	EngineIdleRPM                        float32 `json:"engineIdleRPM"`
@@ -105,12 +110,17 @@ type FH5Telemetry struct {
 	HandBrake                            uint8   `json:"handBrake"` // normalize255to1
 	Gear                                 uint8   `json:"gear"`
 	Steer                                uint8   `json:"steer"` // normalize255to1
-	NormalizedDrivingLine                int8    `json:"normalizedDrivingLine"`
-	NormalizedAIBrakeDifference          int8    `json:"normalizedAIBrakeDifference"`
+	NormalizedDrivingLine                uint8   `json:"normalizedDrivingLine"`
+	NormalizedAIBrakeDifference          uint8   `json:"normalizedAIBrakeDifference"`
 }
 
 func (telemetry *FH5Telemetry) ReadBuffer(b []byte, len int) {
-	telemetry.IsRaceOn = binary.LittleEndian.Uint16(b[0:2])
+	telemetry.IsRaceOn = binary.LittleEndian.Uint32(b[0:4])
+	telemetry.TimeStampMS = binary.LittleEndian.Uint32(b[4:8])
+}
+
+func (value T) ReadBufferFromOffset(b []byte, offset int, size int) {
+	binary.Read(bytes.NewReader(b[0:4]), binary.LittleEndian, &value)
 }
 
 func Server(ctx context.Context, address string) (err error) {
